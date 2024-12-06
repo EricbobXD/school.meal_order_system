@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>校慶訂餐系統</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f4f6;
+            color: #333;
+        }
+
+        header {
+            background-color: #ff9900;
+            color: #fff;
+            text-align: center;
+            padding: 20px 10px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .kiosk {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .menu-item {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            text-align: center;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .menu-item:hover {
+            transform: scale(1.03);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .menu-item h2 {
+            margin: 0 0 10px;
+            font-size: 20px;
+        }
+
+        .menu-item p {
+            margin: 10px 0;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .remaining {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 15px;
+        }
+
+        .menu-item button {
+            padding: 10px 20px;
+            background-color: #ff9900;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        .menu-item button:hover {
+            background-color: #cc7a00;
+        }
+
+        .cart {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .cart h2 {
+            font-size: 22px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .cart ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .cart ul li {
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f1f1;
+        }
+
+        .cart ul li:last-child {
+            border-bottom: none;
+        }
+
+        .total {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .cart button {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #ff9900;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .cart button:hover {
+            background-color: #cc7a00;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        校慶訂餐系統
+    </header>
+    <div class="container">
+        <h2 style="text-align: center; margin-bottom: 20px;">請選擇您的餐點：</h2>
+        <div class="kiosk"></div>
+        <div class="cart">
+            <h2>購物車</h2>
+            <ul id="cart-items"></ul>
+            <div class="total">
+                總金額：¥<span id="total-amount">0.00</span>
+            </div>
+            <button onclick="exportCart()">匯出訂單</button>
+            <button onclick="clearCart()">清空購物車</button>
+        </div>
+    </div>
+    <footer>
+        © 2024 校慶自助點餐系統
+    </footer>
+
+    <script>
+        const menu = [
+            { name: "麥香雞", price: 20.00, remaining: 50 },
+            { name: "薯條", price: 10.00, remaining: 100 },
+            { name: "可樂", price: 5.00, remaining: 80 },
+            { name: "冰淇淋", price: 15.00, remaining: 40 }
+        ];
+
+        function renderMenu() {
+            const kiosk = document.querySelector('.kiosk');
+            kiosk.innerHTML = '';
+            menu.forEach((item, index) => {
+                const menuItem = document.createElement('div');
+                menuItem.className = 'menu-item';
+                menuItem.innerHTML = `
+                    <h2>${item.name}</h2>
+                    <p>¥${item.price.toFixed(2)}</p>
+                    <div class="remaining">剩餘數量：${item.remaining}</div>
+                    <button onclick="selectQuantity(${index})">選擇數量</button>
+                `;
+                kiosk.appendChild(menuItem);
+            });
+        }
+
+        function selectQuantity(index) {
+            const item = menu[index];
+            const quantity = prompt(`請輸入數量（最多 ${item.remaining} 件）`, "1");
+            if (quantity !== null) {
+                const qty = parseInt(quantity);
+                if (qty > 0 && qty <= item.remaining) {
+                    item.remaining -= qty;
+                    addToCart(item.name, item.price, qty);
+                    renderMenu();
+                } else {
+                    alert(`請輸入有效數量（1-${item.remaining}）。`);
+                }
+            }
+        }
+
+        function addToCart(itemName, itemPrice, quantity) {
+            const cartItems = document.getElementById('cart-items');
+            const cartItem = document.createElement('li');
+            const total = (itemPrice * quantity).toFixed(2);
+            cartItem.textContent = `${itemName} x ${quantity} = ¥${total}`;
+            cartItems.appendChild(cartItem);
+            updateTotal();
+        }
+
+        function updateTotal() {
+            const cartItems = document.getElementById('cart-items').getElementsByTagName('li');
+            let totalAmount = 0;
+            for (const item of cartItems) {
+                const priceMatch = item.textContent.match(/¥([\d\.]+)/);
+                if (priceMatch) {
+                    totalAmount += parseFloat(priceMatch[1]);
+                }
+            }
+            document.getElementById('total-amount').textContent = totalAmount.toFixed(2);
+        }
+
+        function exportCart() {
+            const cartItems = document.getElementById('cart-items').getElementsByTagName('li');
+            if (cartItems.length === 0) {
+                alert("購物車是空的，無法匯出！");
+                return;
+            }
+            let csvContent = "商品,數量,價格\n";
+            for (const item of cartItems) {
+                csvContent += item.textContent.replace(/ x | = ¥/g, ",") + "\n";
+            }
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = '校慶訂單.csv';
+            link.click();
+        }
+
+        function clearCart() {
+            document.getElementById('cart-items').innerHTML = '';
+            updateTotal();
+        }
+
+        renderMenu();
+    </script>
+</body>
+</html>
